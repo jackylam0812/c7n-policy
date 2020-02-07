@@ -1,0 +1,71 @@
+policies:
+- name: ebs-volume-delete-unattached-mark
+  comment: "Mark unattached, EBS volumes for deletion."
+  resource: aws.ebs
+  filters:
+    - "tag:c7n_ebs_volume_delete_unattached": absent
+    - Attachments: []
+  mode:
+    role: arn:aws-cn:iam::123456789012:role/lambda_role  # please change this to suitable your enviornment
+    schedule: "rate(2 minutes)"
+    type: periodic
+  actions:
+    - type: mark-for-op
+      tag: c7n_ebs_volume_delete_unattached
+      op: delete
+      hours: 1
+    - type: notify
+      action_desc: |
+        Custodian has marked the volumes for deletion in 1 hour. Please backup
+        the volume and/or attach it.
+      subject: "EBS Volume Maintenance"
+      to: 
+        - yourname@domain.com
+      transport:
+        type: sqs
+        queue: https://sqs.cn-north-1.amazonaws.com.cn/123456789012/c7n-mailer # please change this to suitable your enviornment
+      violation_desc: |
+        Custodian detected unattached EBS volume(s).
+- name: ebs-volume-delete-unattached-unmark
+  comments: |
+    Unmark attached, EBS volumes that were previously marked for deletion.
+  resource: aws.ebs
+  filters:
+    - "tag:c7n_ebs_volume_delete_unattached": not-null
+    - type: value
+      key: "Attachments[0].Device"
+      value: not-null
+  mode:
+    role: arn:aws-cn:iam::123456789012:role/lambda_role  # please change this to suitable your enviornment
+    schedule: "rate(2 minutes)"
+    type: periodic
+  actions:
+    - type: unmark
+      tags: [c7n_ebs_volume_delete_unattached]
+- name: ebs-volume-delete-unattached
+  comments: |
+    Delete unattached, EBS volumes that were marked for deletion.
+  resource: aws.ebs
+  filters:
+    - type: marked-for-op
+      tag: c7n_ebs_volume_delete_unattached
+      op: delete
+    - Attachments: []
+  mode:
+    role: arn:aws-cn:iam::123456789012:role/lambda_role  # please change this to suitable your enviornment
+    schedule: "rate(2 minutes)"
+    type: periodic
+  actions:
+    - delete
+    - type: notify
+      action_desc: |
+        Custodian has deleted unattached, EBS volumes that were maked for
+        deletion. No action is required.
+      subject: "EBS Volume Maintenance"
+      to: 
+        - yourname@domain.com
+      transport:
+        type: sqs
+        queue: https://sqs.cn-north-1.amazonaws.com.cn/123456789012/c7n-mailer # please change this to suitable your enviornment
+      violation_desc: |
+        Custodian detected unattached EBS volume(s).
