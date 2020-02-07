@@ -1,0 +1,16 @@
+policies:
+    - name: custodian_ec2_instance_type_check
+      resource: ec2
+      mode:
+          role: arn:aws-cn:iam::123456789012:role/lambda_role  # please change this to suitable your enviornment
+          type: ec2-instance-state
+          events:
+              - pending
+              - running
+      filters:
+          - type: value
+            key: InstanceType
+            op: ni
+            value: [t3.nano, t3.micro, t3.small, t3.medium, t3.large, t3a.nano, t3a.micro, t3a.small, t3a.medium, t3a.large]
+      actions:
+          - terminate

@@ -1,0 +1,32 @@
+policies:
+  - name: ec2-require-encrypted-volumes
+    resource: ec2
+    description: |
+        Provision a lambda and cloud watch event target
+        that looks at all new instances and terminates those with
+        unencrypted volumes.
+    mode:
+        type: cloudtrail
+        role: arn:aws-cn:iam::123456789012:role/lambda_role  # please change this to suitable your enviornment
+        events:
+        - RunInstances
+    filters:
+        - type: ebs
+          key: Encrypted
+          value: false
+    actions:
+        - terminate
+
+  - name: terminate-unencrypted-ebs
+     description: |
+       Terminate all unencrypted EBS volumes upon creation
+     resource: ebs
+     mode:
+       type: cloudtrail
+       role: arn:aws-cn:iam::123456789012:role/lambda_role  # please change this to suitable your enviornment
+       events:
+         - CreateVolume
+     filters:
+       - Encrypted: false
+     actions:
+       - delete

@@ -1,0 +1,19 @@
+policies:
+    - name: custodian_public_ip_check
+        resource: ec2
+        mode:
+            role: arn:aws-cn:iam::123456789012:role/lambda_role  # please change this to suitable your enviornment
+            type: ec2-instance-state
+            events:
+                - pending
+                - running
+    filters:
+        - type: value
+            key: PublicIpAddress
+            op: ne
+            value: null
+    actions:
+        - stop
+        - type: tag
+            key: custodian_public_ip_check
+            value: “surf-custodian....Instance stopped due to PublicIpAddress not allowed”

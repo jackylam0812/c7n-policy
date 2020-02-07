@@ -1,0 +1,54 @@
+policies:
+- name: security-group-restrict-admin-ingress-80-443
+  resource: security-group
+  comment: "Remove rules allowing unrestricted ingress to ports except 80 / 443"
+  filters:
+    - or:
+      - type: ingress
+        OnlyPorts: [80, 443]
+        Cidr:
+          value: "0.0.0.0/0"
+          op: eq
+          value_type: cidr
+      - type: ingress
+        OnlyPorts: [80, 443]
+        Cidr:
+          value: "::/0"
+          op: eq
+          value_type: cidr
+  mode:
+    type: cloudtrail
+    role: arn:aws-cn:iam::123456789012:role/lambda_role  # please change this to suitable your enviornment
+    events:
+      - source: ec2.amazonaws.com
+        event: AuthorizeSecurityGroupIngress
+        ids: "requestParameters.groupId"
+      - source: ec2.amazonaws.com
+        event: RevokeSecurityGroupIngress
+        ids: "requestParameters.groupId"
+  actions:
+    - type: remove-permissions
+      ingress: matched
+- name: security-group-restrict-admin-ingress-22-3389
+  resource: security-group
+  comment: "Remove rules allowing unrestricted ingress to ports [22, 3389]"
+  filters:
+    - type: ingress
+      Ports: [22, 3389]
+      Cidr:
+        value: 172.31.0.0/16
+        op: ne
+        value_type: cidr
+  mode:
+    type: cloudtrail
+    role: arn:aws-cn:iam::123456789012:role/lambda_role  # please change this to suitable your enviornment
+    events:
+      - source: ec2.amazonaws.com
+        event: AuthorizeSecurityGroupIngress
+        ids: "requestParameters.groupId"
+      - source: ec2.amazonaws.com
+        event: RevokeSecurityGroupIngress
+        ids: "requestParameters.groupId"
+  actions:
+    - type: remove-permissions
+      ingress: matched
